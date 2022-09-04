@@ -1,3 +1,6 @@
+# Traveloor
+Traveloor is a platform that can make it easier for users to purchase exclusive travel and vacation access in form of NFTs. Traveloor is an ERC1155 smart contract that handles four types of Nfts: FLIGHT tickets, CRUISE tickets, HOTEL tickets, TRAIN tickets at a slight cost of 0.1cUSD the USD equivalent on the celo blockchain
+
 # Install
 
 ```
