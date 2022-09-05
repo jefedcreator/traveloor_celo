@@ -5,7 +5,7 @@ import traveloorAbi from '../contract/traveloor.abi.json'
 import erc20Abi from '../contract/erc20.abi.json'
 
 const ERC20_DECIMALS = 18
-const traveloorContractAddress = "0x3B9CfFa7C46c636fB476037e0A4ba26cA0D98319"
+const traveloorContractAddress = "0x0545bA7D01FaB97c3D113BE1Abc5787Db4F13B63"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 let kit
@@ -62,36 +62,16 @@ const fetchNftMeta = async (ipfsUrl) => {
     }
 };
 
-// const fetchNftImage = async (ipfsUrl) => {
-//     try {
-//         if (!ipfsUrl) return null;
-//         const meta = await axios.get(ipfsUrl);
-//         console.log(meta.toString('utf8'));
-//         return meta
-//         ;
-
-//     } catch (e) {
-//         console.log({e});
-//     }
-// };
-
-
 const getNfts = async (url) => {
     try {
         const nfts = [];
-        // const node = Ipfs.create() 
-        // const nftsLength = await minterContract.methods.totalSupply().call();
         for (let i = 1; i < 4; i++) {
-            for (let j = 0; j < 5; j++) {
+           for (let j = 0; j < 5; j++) {
                 const nft = new Promise(async (resolve) => {
                     const res = `${url}/${i}/${j}.json`
-                    // const img = `${ipfs}/${i}/${j}.png`
                     const meta = await fetchNftMeta(res);
-                    // const image = await fetchNftImage(img);
-                    // const owner = await fetchNftOwner(minterContract, i);
-                    if (meta.status != 200){
-                      return;
-                    }
+                    if (meta.status != 200) return;
+            
                     const sold = await contract.methods.viewSold(i,j).call()
                     const price = await contract.methods.price().call()
                     resolve({
@@ -230,18 +210,13 @@ function identiconTemplate(_address) {
 
   document
   .querySelector("#newProductBtn")
-  .addEventListener("click", () => {
-    const _product = {
-      owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-      name: document.getElementById("newProductName").value,
-      image: document.getElementById("newImgUrl").value,
-      description: document.getElementById("newProductDescription").value,
-      location: document.getElementById("newLocation").value,
-      price: document.getElementById("newPrice").value,
-      sold: 0,
-      index: products.length,
-    }
-    products.push(_product)
-    notification(`🎉 You successfully added "${_product.name}".`)
+  .addEventListener("click",async () => {
+    const owner = await contract.methods.deployer.call()
+    if(owner != kit.defaultAccount) notification(`⚠️ only ticket seller can update details`)
+    const name = document.getElementById("newProductName").value;
+    const image = document.getElementById("newImgUrl").value;
+    await contract.methods.updateHash(name).send({from:kit.defaultAccount})
+    await contract.methods.updatePrice(Web3.utils.toWei(image, 'ether')).send({from:kit.defaultAccount})
+    notification(`🎉 You have updated tickets succesfully".`)
     renderProducts()
   })
