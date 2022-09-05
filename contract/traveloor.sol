@@ -6,119 +6,127 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IERC20Token {
-  function transfer(address, uint256) external returns (bool);
-  function approve(address, uint256) external returns (bool);
-  function transferFrom(address, address, uint256) external returns (bool);
-  function totalSupply() external view returns (uint256);
-  function balanceOf(address) external view returns (uint256);
-  function allowance(address, address) external view returns (uint256);
+    function transfer(address, uint256) external returns (bool);
 
-  event Transfer(address indexed from, address indexed to, uint256 value);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+    function approve(address, uint256) external returns (bool);
+
+    function transferFrom(
+        address,
+        address,
+        uint256
+    ) external returns (bool);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address) external view returns (uint256);
+
+    function allowance(address, address) external view returns (uint256);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
-contract Traveloor is ERC1155, Ownable{
-
-
+contract Traveloor is ERC1155, Ownable {
     uint public price = 1;
-    uint public premiumPrice = 0.3 ether;
-    string uriHash = "ipfs://Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y/";
-    address public cUSDContractAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+    string public uriHash =
+        "ipfs://Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y/";
+    address public cUSDContractAddress =
+        0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
 
     mapping(uint => mapping(uint => bool)) sold;
+    mapping(uint => string) private _uris;
 
-    constructor() ERC1155("ipfs://Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y") {
-        // _mint(msg.sender, GOLD, 10**18, "");
-        // _mint(msg.sender, SILVER, 10**27, "");
-        // _mint(msg.sender, THORS_HAMMER, 1, "");
-        // _mint(msg.sender, SWORD, 10**9, "");
-        // _mint(msg.sender, SHIELD, 10**9, "");
-        // cUSDContractAddress = _newAddress;
-    }
+    constructor()
+        ERC1155("ipfs://Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y")
+    {}
 
-    // modifier checkPrice() {
-    //     require(IERC20Token(cUSDContractAddress).balanceOf(msg.sender) >= price, "insufficient balance");
-    //     _;
-    // }
-
-    function checkPremium() internal view returns(bool) {
-        for (uint256 i = 0; i <= 3; i++) {
-            if(IERC1155(address(this)).balanceOf(msg.sender, i) >= 1){
-                return true;
-            }
-        }
-    }
-
-    function uri(uint collectionId, uint tokenId ) internal view returns(string memory){
+    /**
+     * @dev sets uri for Token with collectionID in the format baseUri(uriHash)/_id.json
+     *
+     */
+    function createTokenUri(uint collectionId)
+        internal
+        view
+        returns (string memory)
+    {
         return (
             string(
-                abi.encodePacked(uriHash,
-                Strings.toString(collectionId),
-                "/",
-                Strings.toString(tokenId),
-                ".json"
+                abi.encodePacked(
+                    uriHash,
+                    Strings.toString(collectionId),
+                    ".json"
                 )
             )
-        ); 
+        );
     }
 
-    function updateHash(string memory _uriHash) public onlyOwner{
+    /**
+     * @dev allows the contract's owner to update the base URI
+     * @param _uriHash the new base URI
+     */
+    function updateHash(string calldata _uriHash) public onlyOwner {
         uriHash = _uriHash;
+        _setURI(_uriHash);
     }
 
-    function updatePrice(uint _price) public onlyOwner{
+    /**
+     * @dev allow the contract's owner to update the price for minting
+     * @param _price the new price
+     */
+    function updatePrice(uint _price) public onlyOwner {
         price = _price;
     }
 
-    function updatePremium(uint _premium) public onlyOwner{
-        premiumPrice = _premium;
-    }
-
+    /**
+     * @dev allow users to mint an NFT
+     * @param _type ID of token
+     * @param _index ID of _type's token to mint
+     */
     function mintNft(uint8 _type, uint8 _index) public {
-        // require(_type <= 5, "nft volume exceeded");
-        // require(_index <= 5, "nft volume exceeded");
         require(!sold[_type][_index], "nft has been sold");
-        require(IERC20Token(cUSDContractAddress).transferFrom(msg.sender, address(this), price),"transfer failed");
-        _setURI(uri(_type,_index));
-        _mint(msg.sender, _type, 1,"");
+        if (bytes(_uris[_type]).length == 0) {
+            _uris[_type] = createTokenUri(_type);
+        }
+        _mint(msg.sender, _type, 1, "");
         sold[_type][_index] = true;
+        require(
+            IERC20Token(cUSDContractAddress).transferFrom(
+                msg.sender,
+                address(this),
+                price
+            ),
+            "transfer failed"
+        );
     }
 
-    function viewSold(uint8 _type, uint8 _index) public view returns(bool status){
+    /**
+     * @return status of whether a token of _type with _index has been minted/bought
+     * @param _type ID of token
+     * @param _index ID of _type's token to mint
+     */
+    function viewSold(uint8 _type, uint8 _index)
+        public
+        view
+        returns (bool status)
+    {
         status = sold[_type][_index];
     }
 
-    // function mintTrain() public checkPrice() payable{
-    //     require(_trainIdCounter.current() <=5, "nft volume exceeded");
-    //     uint tokenId = _trainIdCounter.current();
-    //     _trainIdCounter.increment();
-    //     _setURI(uri(TRAIN,tokenId));
-    //     _mint(msg.sender, TRAIN, 1,"");
-    // }
-
-    // function mintCruise() public checkPrice() payable{
-    //     require(_cruiseIdCounter.current() <= 5, "nft volume exceeded");
-    //     uint tokenId = _cruiseIdCounter.current();
-    //     _cruiseIdCounter.increment();
-    //     _setURI(uri(CRUISE,tokenId));
-    //     _mint(msg.sender, CRUISE, 1,"");
-    // }
-
-    // function mintHotel() public checkPrice() payable{
-    //     require(_hotelIdCounter.current() <= 5, "nft volume exceeded");
-    //     uint tokenId = _hotelIdCounter.current();
-    //     _hotelIdCounter.increment();
-    //     _setURI(uri(HOTEL,tokenId));
-    //     _mint(msg.sender, HOTEL, 1,"");
-    // }
-
-    // function mintPremium() public payable{
-    //     require(_premiumIdCounter.current() <= 5, "nft volume exceeded");
-    //     require(msg.value == premiumPrice, "insufficient ether");
-    //     require(checkPremium());
-    //     uint tokenId = _premiumIdCounter.current();
-    //     _premiumIdCounter.increment();
-    //     _setURI(uri(PREMIUM,tokenId));
-    //     _mint(msg.sender, PREMIUM, 1,"");
-    // }
+    /**
+     * @dev returns the uri for token with type _id
+     This have been overriden to return the specific uri for each token type instead of the baseUri
+    */
+    function uri(uint256 _id)
+        public
+        view
+        virtual
+        override(ERC1155)
+        returns (string memory)
+    {
+        return _uris[_id];
+    }
 }
