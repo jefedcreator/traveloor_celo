@@ -27,21 +27,6 @@ contract Traveloor is ERC1155, Ownable{
         deployer = msg.sender;
     }
 
-    ///@notice checkprice modifier checks if the balance of buyer is greater or equal to current nft price, before minting.
-    modifier checkPrice() {
-        require(IERC20Token(cUSDContractAddress).balanceOf(msg.sender) >= price, "insufficient balance");
-        _;
-    }
-
-    ///@notice function checks the ERC1155 balance of caller, of any type of ERC1155 within this contract
-    function checkPremium() internal view returns(bool) {
-        for (uint256 i = 0; i <= 3; i++) {
-            if(IERC1155(address(this)).balanceOf(msg.sender, i) >= 1){
-                return true;
-            }
-        }
-    }
-
     ///@notice uri internal function returns a new uri from its arguments whenever it is called. this helps platforms like opensea visualize each ERC1155 token
     ///@param _type refers to the type of NFT contained within this ERC1155
     ///@param _index refers to a specific NFT of a certain type
@@ -76,7 +61,8 @@ contract Traveloor is ERC1155, Ownable{
     ///@param _type refers to the type of NFT contained within this ERC1155
     ///@param _index refers to a specific NFT of a certain type
     ///@notice mintNft function mint one ERC1155 nft as specified within its parameters, for a specific cUSD cost
-    function mintNft(uint8 _type, uint8 _index) checkPrice() public {
+    function mintNft(uint8 _type, uint8 _index) public {
+        require(IERC20Token(cUSDContractAddress).balanceOf(msg.sender) >= price, "insufficient balance");
         require(!sold[_type][_index], "nft has been sold");
         require(IERC20Token(cUSDContractAddress).transferFrom(msg.sender, address(this), price),"transfer failed");
         _setURI(uri(_type,_index));
