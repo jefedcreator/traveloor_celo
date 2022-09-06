@@ -34,9 +34,14 @@ const connectCeloWallet = async function () {
 }
 
     const getBalance = async function () {
+      try {
         const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
         const cUSDBalance = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2)
         document.querySelector("#balance").textContent = cUSDBalance
+      } catch (error) {
+        notification("⚠️ Please install the CeloExtensionWallet.")
+      }
+        
       }
 
   async function renderProducts() {
@@ -65,9 +70,10 @@ const fetchNftMeta = async (ipfsUrl) => {
 const getNfts = async (url) => {
     try {
         const nfts = [];
-        for (let i = 1; i < 4; i++) {
+        for (let i = 1; i < 5; i++) {
            for (let j = 0; j < 5; j++) {
                 const nft = new Promise(async (resolve) => {
+                  try {
                     const res = `${url}/${i}/${j}.json`
                     const meta = await fetchNftMeta(res);
                     if (meta.status != 200) return;
@@ -83,6 +89,9 @@ const getNfts = async (url) => {
                         image: meta.data.image,
                         description: meta.data.description
                     });
+                  } catch (error) {
+                    notification("⚠️ Please install the CeloExtensionWallet.") 
+                  }
                 });
                 nfts.push(nft);
             }
