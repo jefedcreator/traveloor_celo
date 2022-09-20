@@ -159,6 +159,7 @@ window.addEventListener('load', async () => {
     await changeNetwork()
     await connectCeloWallet()
     await getBalance()
+    await renderProducts()
     notificationOff()
     // await showIPFSImage()
   });
@@ -259,12 +260,10 @@ function identiconTemplate(_address) {
     document.querySelector(".alert").style.display = "none"
   }
 
-  window.addEventListener("load", () => {
-    notification("⌛ Loading...")
-    getBalance()
-    renderProducts()
-    notificationOff()
-  })
+  // window.addEventListener("load", () => {
+  //   notification("⌛ Loading...")
+  //   notificationOff()
+  // })
 
   document
   .querySelector("#newProductBtn")
