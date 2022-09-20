@@ -10,21 +10,76 @@ const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 let kit
 let contract
+let products = []
+
+const networks = {
+    chainId : `0x${Number(44787).toString(16)}`,
+    chainName: "Celo Alfajores Testnet",
+    nativeCurrency: {
+      name:"CELO",
+      symbol:"CELO",
+      decimals: 18
+    },
+    rpcUrls:["https://alfajores-forno.celo-testnet.org"],
+    blockExplorerUrls:["https://alfajores-blockscout.celo-testnet.org"]
+  }
+
+
+const changeNetwork = async() =>{
+  try {
+    await ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: `0x${Number(44787).toString(16)}` }],
+      
+    });
+    // window.location.reload();
+  } catch (switchError) {
+    // This error code indicates that the chain has not been added to MetaMask.
+    if (switchError.code === 4902) {
+      try {
+        await ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [
+            networks
+          ],
+        });
+      // window.location.reload();
+      } catch (addError) {
+        // handle "add" error
+        notification(`⚠️ ${addError.message}.`)
+      }
+    }
+    
+  }
+  // try {
+  //   if (!window.ethereum) throw new Error(notification(`⚠️ ${"Metamask not found"}.`))
+  //   await window.ethereum.request({
+  //     method: "wallet_addEthereumChain",
+  //     params:[
+  //       networks
+  //     ]
+  //   });
+  //   window.location.reload();
+  // } catch (error) {
+  //   notification(`⚠️ ${error.message}.`)
+  // }
+}
 
 const connectCeloWallet = async function () {
-    if (window.celo) {
+    if (window.ethereum) {
       notification("⚠️ Please approve this DApp to use it.")
       try {
-        await window.celo.enable()
+        await window.ethereum.enable()
         notificationOff()
-  
-        const web3 = new Web3(window.celo)
+
+        const web3 = new Web3(window.ethereum)
         kit = newKitFromWeb3(web3)
   
         const accounts = await kit.web3.eth.getAccounts()
         kit.defaultAccount = accounts[0]
   
         contract = new kit.web3.eth.Contract(traveloorAbi, traveloorContractAddress)
+
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
@@ -46,16 +101,14 @@ const connectCeloWallet = async function () {
 
   async function renderProducts() {
     document.getElementById("marketplace").innerHTML = ""
-    let products = await getNfts("https://ipfs.io/ipfs/Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y");
+    products = await getNfts("https://ipfs.io/ipfs/Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y");
     products.forEach((_product) => {
       const newDiv = document.createElement("div")
       newDiv.className = "col-md-3"
       newDiv.innerHTML = productTemplate(_product)
       document.getElementById("marketplace").appendChild(newDiv)
-      console.log("individual nft:",_product);
     })
 }
-
 
 const fetchNftMeta = async (ipfsUrl) => {
     try {
@@ -73,7 +126,7 @@ const getNfts = async (url) => {
         for (let i = 1; i < 5; i++) {
            for (let j = 0; j < 5; j++) {
                 const nft = new Promise(async (resolve) => {
-                  try {
+                  
                     const res = `${url}/${i}/${j}.json`
                     const meta = await fetchNftMeta(res);
                     if (meta.status != 200) return;
@@ -89,9 +142,6 @@ const getNfts = async (url) => {
                         image: meta.data.image,
                         description: meta.data.description
                     });
-                  } catch (error) {
-                    notification("⚠️ Please install the CeloExtensionWallet.") 
-                  }
                 });
                 nfts.push(nft);
             }
@@ -106,6 +156,7 @@ const getNfts = async (url) => {
 
 window.addEventListener('load', async () => {
     notification("⌛ Loading...")
+    await changeNetwork()
     await connectCeloWallet()
     await getBalance()
     notificationOff()
@@ -113,7 +164,6 @@ window.addEventListener('load', async () => {
   });
 
 function productTemplate(_product) {
-  // let _product = await getNfts("https://ipfs.io/ipfs/Qmf6c4FJWRULNTQ4dWZ2zDEqpB16DwFWQGcyynrAwM6tut");
     return `
       <div class="card mb-4">
         <img class="card-img-top" src="${_product.image}" alt="...">
@@ -158,7 +208,6 @@ document.querySelector("#marketplace").addEventListener("click", async function 
   if (e.target.className.includes("buyBtn")) {
     const index = Number(e.target.id)
     const type = Number(e.target.dataset['id'])
-    let products = await getNfts("https://ipfs.io/ipfs/Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y");
     const product = Number(getIndex(type,index))
     console.log("product is:",product);
     notification("⌛ Waiting for payment approval...")
