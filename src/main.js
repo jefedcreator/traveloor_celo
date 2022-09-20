@@ -71,6 +71,7 @@ const connectCeloWallet = async function () {
       try {
         await window.ethereum.enable()
         notificationOff()
+        await changeNetwork()
 
         const web3 = new Web3(window.ethereum)
         kit = newKitFromWeb3(web3)
@@ -156,7 +157,6 @@ const getNfts = async (url) => {
 
 window.addEventListener('load', async () => {
     notification("⌛ Loading...")
-    await changeNetwork()
     await connectCeloWallet()
     await getBalance()
     await renderProducts()
@@ -216,8 +216,9 @@ document.querySelector("#marketplace").addEventListener("click", async function 
       await approve("100000000000000000000")
     } catch (error) {
       notification(`⚠️ ${error}.`)
-    }notification(`⌛ Awaiting payment for one"${products[product].description}"...`)
+    }
     try {
+      notification(`⌛ Awaiting payment for one"${products[product].description}"...`)
       await contract.methods.mintNft(type,index).send({from:kit.defaultAccount})
       notification(`🎉 You successfully bought one"${products[product].description}".`)
       renderProducts()
