@@ -51,43 +51,31 @@ const changeNetwork = async() =>{
     }
     
   }
-  // try {
-  //   if (!window.ethereum) throw new Error(notification(`⚠️ ${"Metamask not found"}.`))
-  //   await window.ethereum.request({
-  //     method: "wallet_addEthereumChain",
-  //     params:[
-  //       networks
-  //     ]
-  //   });
-  //   window.location.reload();
-  // } catch (error) {
-  //   notification(`⚠️ ${error.message}.`)
-  // }
 }
 
-const connectCeloWallet = async function () {
-    if (window.ethereum) {
-      notification("⚠️ Please approve this DApp to use it.")
-      try {
-        await window.ethereum.enable()
-        notificationOff()
-        await changeNetwork()
+    const connectCeloWallet = async function () {
+      if (window.ethereum) {
+        notification("⚠️ Please approve this DApp to use it.")
+        try {
+          await window.ethereum.enable()
+          notificationOff()
+          await changeNetwork()
 
-        const web3 = new Web3(window.ethereum)
-        kit = newKitFromWeb3(web3)
-  
-        const accounts = await kit.web3.eth.getAccounts()
-        kit.defaultAccount = accounts[0]
-  
-        contract = new kit.web3.eth.Contract(traveloorAbi, traveloorContractAddress)
+          const web3 = new Web3(window.ethereum)
+          kit = newKitFromWeb3(web3)
+    
+          const accounts = await kit.web3.eth.getAccounts()
+          kit.defaultAccount = accounts[0]
+    
+          contract = new kit.web3.eth.Contract(traveloorAbi, traveloorContractAddress)
 
-      } catch (error) {
-        notification(`⚠️ ${error}.`)
+        } catch (error) {
+          notification(`⚠️ ${error}.`)
+        }
+      } else {
+        notification("⚠️ Please install the CeloExtensionWallet.")
       }
-    } else {
-      notification("⚠️ Please install the CeloExtensionWallet.")
     }
-}
 
     const getBalance = async function () {
       try {
