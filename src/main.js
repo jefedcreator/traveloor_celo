@@ -135,7 +135,9 @@ const getNfts = async (url) => {
                 nfts.push(nft);
             }
         }
-        return Promise.all(nfts);
+        return Promise.all(nfts).then(notification("⌛ Loading..."))
+        // .then(renderProducts())
+        .catch((e) => `An error occured ${e}, please refresh`);
     } catch (e) {
         console.log({e});
     }
