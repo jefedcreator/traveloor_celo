@@ -91,6 +91,7 @@ const changeNetwork = async() =>{
   async function renderProducts() {
     document.getElementById("marketplace").innerHTML = ""
     products = await getNfts("https://ipfs.io/ipfs/Qmcg2UE6pV3h8FXSH5LYs6BhxpKvEQ2EUi6Xugwt6VkN2y");
+    console.log("products", products);
     products.forEach((_product) => {
       const newDiv = document.createElement("div")
       newDiv.className = "col-md-3"
@@ -99,10 +100,26 @@ const changeNetwork = async() =>{
     })
 }
 
+function refresh() {
+  var spinner = document.querySelector('.loader');
+  spinner.classList.add('spin');
+  performFakeCall();
+  
+  function performFakeCall () {
+      return new Promise(function (resolve, reject) {
+        setTimeout(function(){ resolve()}, 3000);
+      })
+    }
+  
+    performFakeCall().then(function(result) {
+      spinner.classList.remove('spin');
+    });
+  }
+
 const fetchNftMeta = async (ipfsUrl) => {
     try {
         if (!ipfsUrl) return null;
-        const meta = await axios.get(ipfsUrl);
+        const meta = await axios.get(ipfsUrl)
         return meta;
     } catch (e) {
         console.log({e});
@@ -110,38 +127,39 @@ const fetchNftMeta = async (ipfsUrl) => {
 };
 
 const getNfts = async (url) => {
-    try {
-        const nfts = [];
-        for (let i = 1; i < 5; i++) {
-           for (let j = 0; j < 5; j++) {
-                const nft = new Promise(async (resolve) => {
-                  
-                    const res = `${url}/${i}/${j}.json`
-                    const meta = await fetchNftMeta(res);
-                    if (meta.status != 200) return;
-            
-                    const sold = await contract.methods.viewSold(i,j).call()
-                    const price = await contract.methods.price().call()
-                    resolve({
-                        sold:sold,
-                        price:Web3.utils.fromWei(price, 'ether'),
-                        type: i,
-                        index: j,
-                        name: meta.data.name,
-                        image: meta.data.image,
-                        description: meta.data.description
-                    });
-                });
-                nfts.push(nft);
-            }
-        }
-        return Promise.all(nfts).then(notification("⌛ Loading..."))
-        // .then(renderProducts())
-        .catch((e) => `An error occured ${e}, please refresh`);
-    } catch (e) {
-        console.log({e});
-    }
+  try {
+      const nfts = [];
+      for (let i = 1; i < 5; i++) {
+         for (let j = 0; j < 5; j++) {
+              const nft = new Promise(async (resolve) => {
+                
+                  const res = `${url}/${i}/${j}.json`
+                  const meta = await fetchNftMeta(res);
+                  if (meta.status != 200) return;
+          
+                  const sold = await contract.methods.viewSold(i,j).call()
+                  const price = await contract.methods.price().call()
+                  resolve({
+                      sold:sold,
+                      price:Web3.utils.fromWei(price, 'ether'),
+                      type: i,
+                      index: j,
+                      name: meta.data.name,
+                      image: meta.data.image,
+                      description: meta.data.description
+                  });
+              });
+              nfts.push(nft);
+          }
+      }
+      return Promise.all(nfts).then(notification("⌛ Loading..."))
+      // .then(renderProducts())
+      .catch((e) => `An error occured ${e}, please refresh`);
+  } catch (e) {
+      console.log({e});
+  }
 };
+
 
 
 
@@ -195,10 +213,12 @@ async function approve(_price) {
   return result
 }
 
+
 document.querySelector("#marketplace").addEventListener("click", async function buyNft (e){
   if (e.target.className.includes("buyBtn")) {
     const index = Number(e.target.id)
     const type = Number(e.target.dataset['id'])
+    console.log("index", index, "type", type);
     const product = Number(getIndex(type,index))
     console.log("product is:",product);
     notification("⌛ Waiting for payment approval...")
@@ -220,7 +240,7 @@ document.querySelector("#marketplace").addEventListener("click", async function 
 })
 
 function getIndex(type,index){
-  return type * 5 + index; 
+  return ((type * 4) + index) - 4; 
 }
 
 function identiconTemplate(_address) {
